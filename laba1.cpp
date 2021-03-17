@@ -243,6 +243,9 @@ int main (int argc, char const *argv[]) {
                         else
                                 un.d = stod(argv[1]);
                         transformation(&binary, type);
+                        delete[] binary.byte;
+                        delete[] binary.exp;
+                        delete[] binary.mantissa;
                 }
                 return 0;
         }
