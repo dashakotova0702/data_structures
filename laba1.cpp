@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <iomanip>
 using namespace std;
 
 struct Binary {
@@ -51,12 +52,10 @@ void separation(Realis* realis, Binary* binary) {
 
 void to_binary(Realis* realis, Binary* binary, string type) {
         int count_integer = 0, integer = realis->integer, count_mantissa;
-        if (type == "f") {
+        if (type == "f")
                 count_mantissa = 23;
-        }
-        else {
+        else
                 count_mantissa = 52;
-        };
         if (realis->integer != 0) {
                 while (integer != 0) {
                         integer = integer / 2;
@@ -77,10 +76,10 @@ void to_binary(Realis* realis, Binary* binary, string type) {
         int count_fractional = 0;
         double fractional = realis->fractional;
         for (int i = 0; i < count_mantissa; i++) {
-                if (fractional != 1.0) {
+                if ((fractional - 1.0) < 0.0000000000000001) {
                         fractional = fractional * 2;
-                        if (fractional > 1.0) {
-                                fractional--;
+                        if ((fractional - 1.0) < 0.0000000000000001) {
+                                fractional = fractional - 1.0;
                         }
                         count_fractional++;
                 }
@@ -88,13 +87,36 @@ void to_binary(Realis* realis, Binary* binary, string type) {
         binary->fractional = new int[count_fractional];
         fractional = realis->fractional;
         for (int i = 0; i < count_fractional; i++) {
-                fractional = fractional * 2;
-                if (fractional >= 1.0) {
-                        fractional--;
+                double fr = int(fractional*100000 + 0.5)/100000.0;
+                fr = fr * 2;
+                if (fr >= 1.0) {
+                        fr = fr - 1.0;
                         binary->fractional[i] = 1;
                 }
                 else
                         binary->fractional[i] = 0;
+                fractional = fr;
+        }
+        int exp = 1;
+        int i = 0;
+        while (binary->fractional[i] != 1) {
+                exp++;
+                i++;
+        }
+        count_fractional += exp;
+        delete[] binary->fractional;
+        binary->fractional = new int[count_fractional];
+        fractional = realis->fractional;
+        for (int i = 0; i < count_fractional; i++) {
+                double fr = int(fractional*100000 + 0.5)/100000.0;
+                fr = fr * 2;
+                if (fr >= 1.0) {
+                        fr = fr - 1.0;
+                        binary->fractional[i] = 1;
+                }
+                else
+                        binary->fractional[i] = 0;
+                fractional = fr;
         }
         binary->count_int = count_integer;
         binary->count_frac = count_fractional;
@@ -141,6 +163,7 @@ void init_exp_mant(Binary* binary, string type) {
                                 }
                         }
                 }
+                exp = rank + k;
         }
         else {
                 for (int i = 0; i < binary->count_frac; i++) {
@@ -160,8 +183,9 @@ void init_exp_mant(Binary* binary, string type) {
                                 j++;
                         }
                 }
+                exp = -rank + k;
         }
-        exp = rank + k;
+        cout << exp << endl;
         for (int j = count_exp-1; j >= 0; j--) {
                 binary->exp[j] = exp % 2;
                 exp = exp / 2;
@@ -186,16 +210,20 @@ void transformation (Binary* binary, string type) {
                 count_byte = 8, exp = 11, mantissa = 52;
         }
         binary->byte = new int [exp+mantissa+1];
+        cout << un.cf[0] << un.cf[1] << un.cf[2] << un.cf[3] << endl;
         for (int i = 0; i < count_byte; i++) {
                 int k = 128, j = exp+mantissa + 1 - 8 * (1 + i);
                 while (k > 0) {
-                        if (type == "f")
+                        if (type == "f") {
                                 binary->byte[j] = bool(un.cf[i]&k);
+                                cout << bool(un.cf[i]&k);
+                        }
                         else
                                 binary->byte[j] = bool(un.cd[i]&k);
                         j++;
                         k = k >> 1;
                 };
+                cout << " " << endl;
         }
         binary->exp = new int[exp];
         binary->mantissa = new int[mantissa];
@@ -206,7 +234,7 @@ void transformation (Binary* binary, string type) {
                 count++;
         }
         for (int i = 0; i < mantissa; i++) {
-                binary->mantissa[i] = binary->byte[count];
+                binary->mantissa[i] = binary->byte[count + 1];
                 count++;
         }
         cout << "Number in IBM memory: " << '[' << binary->sign << "] [";
