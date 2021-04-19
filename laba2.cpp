@@ -64,14 +64,11 @@ void to_postfix_notation (Math* math) {
         int priority1 = 0, priority2 = 0;
         for (int i = 0; i < math->math_exp.length(); i++) {
                 if (math->math_exp[i] == '(') {
-                        cout << "skobka left " << i << endl;
                         str.clear();
                         str += math->math_exp[i];
                         math->s1.push(str);
-                        cout << math->s1.top() << endl;
                 }
                 if (((int)(math->math_exp[i]) > 47 && (int)(math->math_exp[i]) < 58) || (i != 0 && math->math_exp[i] == '-' && ((int)(math->math_exp[i-1]) < 48 || (int)(math->math_exp[i-1]) > 57)) || (i == 0 && math->math_exp[i] == '-')) {
-                        cout << "number " << i << endl;
                         str.clear();
                         if (math->math_exp[i] == '-') {
                                 str += math->math_exp[i];
@@ -85,16 +82,13 @@ void to_postfix_notation (Math* math) {
                                         i++;
                                 }
                                 math->q.push(str);
-                                cout << math->q.back() << endl;
                         }
                         else {
                                 str += math->math_exp[i];
                                 math->q.push(str);
-                                cout << math->q.back() << endl;
                         }
                 }
                 if (math->math_exp[i] == '+' || math->math_exp[i] == '-' || math->math_exp[i] == '*' || math->math_exp[i] == '/') {
-                        cout << "sign " << i << endl;
                         if (math->math_exp[i] == '+' || math->math_exp[i] == '-')
                                 priority1 = 2;
                         if (math->math_exp[i] == '*' || math->math_exp[i] == '/')
@@ -103,7 +97,6 @@ void to_postfix_notation (Math* math) {
                                 str.clear();
                                 str += math->math_exp[i];
                                 math->s1.push(str);
-                                cout << math->s1.top() << endl;
                         }
                         else {
                                 do {
@@ -119,7 +112,6 @@ void to_postfix_notation (Math* math) {
                                                 priority2 = 0;
                                         if (priority2 >= priority1) {
                                                 math->q.push(math->s1.top());
-                                                cout << math->q.back() << endl;
                                                 math->s1.pop();
                                         }
                                 }
@@ -127,14 +119,11 @@ void to_postfix_notation (Math* math) {
                                 str.clear();
                                 str += math->math_exp[i];
                                 math->s1.push(str);
-                                cout << math->s1.top() << endl;
                         }
                 }
                 if (math->math_exp[i] == ')') {
-                        cout << "skobka right " << i << endl;
                         while (math->s1.top() != "(") {
                                 math->q.push(math->s1.top());
-                                cout << math->q.back() << endl;
                                 math->s1.pop();
                         }
                         math->s1.pop();
@@ -155,33 +144,43 @@ void to_postfix_notation (Math* math) {
 void stack_machine (Math* math) {
         string s_number;
         double d_number1, d_number2;
+        bool error = false;
         for (int i = 0; i < math->postf_not.length(); i++) {
-                if ((math->postf_not[i] == '-' && math->postf_not[i+1] == ' ') || math->postf_not[i] == '+' || math->postf_not[i] == '*' || math->postf_not[i] == '/') {
-                        d_number1 = math->s2.top();
-                        math->s2.pop();
-                        d_number2 = math->s2.top();
-                        math->s2.pop();
-                        if (math->postf_not[i] == '-')
-                                math->s2.push(d_number2-d_number1);
-                        if (math->postf_not[i] == '+')
-                                math->s2.push(d_number2+d_number1);
-                        if (math->postf_not[i] == '*')
-                                math->s2.push(d_number2*d_number1);
-                        if (math->postf_not[i] == '/')
-                                math->s2.push(d_number2/d_number1);
-                        i++;
-                }
-                else {
-                        s_number.clear();
-                        while (math->postf_not[i] != ' ') {
-                                s_number += math->postf_not[i];
-                                i++;
-                        }
-                        d_number1 = stod(s_number);
-                        math->s2.push(d_number1);
+                if (math->postf_not[i] > 96 && math->postf_not[i] < 123) {
+                        cout << "Error" << endl;
+                        error = true;
+                        break;
                 }
         }
-        cout << "Result: " << math->s2.top() << endl;
+        if (!error) {
+                for (int i = 0; i < math->postf_not.length(); i++) {
+                        if ((math->postf_not[i] == '-' && math->postf_not[i+1] == ' ') || math->postf_not[i] == '+' || math->postf_not[i] == '*' || math->postf_not[i] == '/') {
+                                d_number1 = math->s2.top();
+                                math->s2.pop();
+                                d_number2 = math->s2.top();
+                                math->s2.pop();
+                                if (math->postf_not[i] == '-')
+                                        math->s2.push(d_number2-d_number1);
+                                if (math->postf_not[i] == '+')
+                                        math->s2.push(d_number2+d_number1);
+                                if (math->postf_not[i] == '*')
+                                        math->s2.push(d_number2*d_number1);
+                                if (math->postf_not[i] == '/')
+                                        math->s2.push(d_number2/d_number1);
+                                i++;
+                        }
+                        else {
+                                s_number.clear();
+                                while (math->postf_not[i] != ' ') {
+                                        s_number += math->postf_not[i];
+                                        i++;
+                                }
+                                d_number1 = stod(s_number);
+                                math->s2.push(d_number1);
+                        }
+                }
+                cout << "Result: " << math->s2.top() << endl;
+        }
 }
 
 int main (int argc, char const *argv[]) {
