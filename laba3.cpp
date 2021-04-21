@@ -20,7 +20,6 @@ struct List {
         bool is_empty () {
                 return (first == NULL);
         }
-
         void push_back (int vertex, int weight) {
                 Node* node = new Node(vertex, weight);
                 if (is_empty()) {
@@ -39,11 +38,52 @@ struct List {
                         cout << endl;
                 }
         }
+        int get_count_adj_vertex () {
+                int count = 0;
+                while (first) {
+                        count++;
+                        first = first->next;
+                }
+                return count;
+        }
+        int get_adjacent_vertex (Marks* m) {
+                while (first) {
+                        int a = 0, b = 0;
+                        for (int i = 0; i < m->size; i++) {
+                                if (first->vertex == m->processed_vertex[i])
+                                        a++;
+                        }
+                        if (a == 0) {
+                                for (int i = 0; i < m->size; i++) {
+                                        if (first->vertex == m->processed_vertex_marks[i])
+                                                b++;
+                                }
+                                if (b == 0) {
+                                        m->processed_vertex_marks[m->id_processed_vertex_marks] = first->vertex;
+                                        m->id_processed_vertex_marks++;
+                                        return first->vertex;
+                                }
+                                else
+                                        first = first->next;
+                        }
+                        else
+                                first = first->next;
+                }
+        }
+        int get_weight_vertex (int vertex, int adjacent_vertex) {
+                while (first) {
+                        if (first->vertex == adjacent_vertex)
+                                return first->weight;
+                }
+        }
 };
 
 class Strategy {
 public:
 virtual void init (ifstream &f) = 0;
+virtual int adjacent_vertex (Marks* m, int vertex);
+virtual int get_count_adj_vertex(int vertex);
+virtual int weight_vertex (int vertex, int adjacent_vertex);
 virtual ~Strategy () {
 }
 };
@@ -92,6 +132,16 @@ void init (ifstream &f) {
                 cout << endl;
         }
 }
+
+int adjacent_vertex (Marks* m, int vertex) {
+        return 0;
+}
+int get_count_adj_vertex(int vertex) {
+        return 0;
+}
+int weight_vertex (int adjacent_vertex) {
+        return 0;
+}
 };
 
 class ArrayLists : public Strategy {
@@ -127,13 +177,25 @@ void init (ifstream &f) {
         for (int i = 0; i < size; i++)
                 arr_lsts[i].print();
 }
+
+int adjacent_vertex (Marks* m, int vertex) {
+        return arr_lsts[vertex].get_adjacent_vertex(m);
+}
+
+int get_count_adj_vertex(int vertex) {
+        return arr_lsts[vertex].get_count_adj_vertex();
+}
+int weight_vertex (int vertex, int adjacent_vertex) {
+        return arr_lsts[vertex].get_weight_vertex(vertex, adjacent_vertex);
+}
 };
 
 class Graph {
 private:
-Strategy *strtg_;
+Strategy* strtg_;
 
 public:
+
 Graph (Strategy *strtg = nullptr) : strtg_(strtg) {
 }
 
@@ -141,25 +203,51 @@ void init (ifstream &f) {
         this->strtg_->init(f);
 }
 
+int get_count_adj_vertex(int vertex) {
+        return this->strtg_->get_count_adj_vertex(vertex);
+}
+
+int adjacent_vertex (Marks* m, int vertex) {
+        return this->strtg_->adjacent_vertex(m, vertex);
+}
+
+int weight_vertex (int vertex, int adjacent_vertex) {
+        return this->strtg_->weight_vertex(vertex, adjacent_vertex);
+}
+
 ~Graph () {
         delete this->strtg_;
 }
 };
+class Marks {
+public:
+int* marks;
+int* processed_vertex;
+int* processed_vertex_marks;
+int size;
+int id_processed_vertex_marks = 0;
+};
 
-void dkstr (Graph* g, ifstream &f, int start, int end) {
-        int size;
+void dkstr (Graph* g, Marks* m, ifstream &f, int start, int end) {
+        int vertex = start, id_processed_vertex = 0;
         string str;
         getline(f, str);
         getline(f, str);
-        size = stoi(str);
-        int marks[size];
-        for (int i = 0; i < size; i++) {
+        m->size = stoi(str);
+        m->marks = new int [m->size];
+        m->processed_vertex = new int [m->size];
+        m->processed_vertex_marks = new int [m->size];
+        for (int i = 0; i < m->size; i++) {
                 if (i == start)
-                        marks[i] = 0;
+                        m->marks[i] = 0;
                 else
-                        marks[i] = 100000;
+                        m->marks[i] = 100000;
         }
-
+        int count_adj_vertex = g->get_count_adj_vertex(vertex);
+        for (int i = 0; i < count_adj_vertex; i++) {
+                int adjacent_vertex = g->adjacent_vertex(m, vertex);
+                int weight = g->weight_vertex(vertex, adjacent_vertex);
+        }
 }
 
 int main (int argc, char const *argv[]) {
@@ -170,12 +258,13 @@ int main (int argc, char const *argv[]) {
                 ifstream fout("graph.txt");
                 getline(fout, type);
                 Graph* g;
+                Marks m;
                 if (type == "matrix")
                         g = new Graph(new Matrix);
                 else
                         g = new Graph(new ArrayLists);
                 g->init(fout);
-                dkstr(g, fout, start, end);
+                dkstr(g, &m, fout, start, end);
                 return 0;
         }
         else {
