@@ -258,7 +258,7 @@ void dkstr (Graph* g, Marks* m, ifstream &f, int start, int end) {
         f.clear();
         f.seekg(0);
         int vertex, id_processed_vertex = 0;
-        string str;
+        string str, way;
         getline(f, str);
         getline(f, str);
         m->size = stoi(str);
@@ -271,7 +271,6 @@ void dkstr (Graph* g, Marks* m, ifstream &f, int start, int end) {
                 else
                         m->marks[i] = 100000;
         }
-
         while (id_processed_vertex != m->size) {
                 int min = 100000, min_id = 0;
                 for (int i = 0; i < m->size; i++) {
@@ -303,8 +302,26 @@ void dkstr (Graph* g, Marks* m, ifstream &f, int start, int end) {
                 m->processed_vertex[id_processed_vertex] = vertex;
                 id_processed_vertex++;
         }
+        cout << "Marks: " << endl;
         for (int i = 0; i < m->size; i++)
                 cout << i << " = " << m->marks[i] << endl;
+        way = to_string(end);
+        vertex = end;
+        while (vertex != start) {
+                for (int j = 0; j < m->size; j++) {
+                        if (j != vertex) {
+                                int weight_adjacent_vertex = g->weight_vertex(m, j, vertex);
+                                if (m->marks[vertex] - weight_adjacent_vertex == m->marks[j]) {
+                                        vertex = j;
+                                        way += ">-";
+                                        way += to_string(j);
+                                }
+                        }
+                }
+        }
+        for (int i = way.length(); i >= 0; i--)
+                cout << way[i];
+        cout << endl;
 }
 
 int main (int argc, char const *argv[]) {
