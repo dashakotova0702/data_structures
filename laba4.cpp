@@ -7,6 +7,7 @@ using namespace std;
 class TreeNode {
 public:
 char data;
+int weight;
 TreeNode *left;
 TreeNode *right;
 };
@@ -55,6 +56,28 @@ struct List {
                         file << endl;
                 }
         }
+        void sort() {
+                Node* a, *b, *p, *h = NULL;
+                for (Node* i = first; i != NULL; ) {
+                        a = i;
+                        i = i->next;
+                        b = h;
+                        for (p = NULL; (b != NULL) && (a->stat > b->stat); ) {
+                                p = b;
+                                b = b->next;
+                        }
+
+                        if (p == NULL) {
+                                a->next = h;
+                                h       = a;
+                        } else {
+                                a->next = b;
+                                p->next = a;
+                        }
+                }
+                if (h != NULL)
+                        first = h;
+        }
 };
 
 class Data {
@@ -63,7 +86,7 @@ TreeNode* tree;
 List stat;
 };
 
-void levelOrderPrint (TreeNode *root) {
+void levelOrderPrint (TreeNode* root, List* list) {
         if (root == NULL) {
                 return;
         }
@@ -82,7 +105,7 @@ void levelOrderPrint (TreeNode *root) {
                         q.push(temp->right);
         }
 }
-void preorderPrint (TreeNode *root) {
+void preorderPrint (TreeNode* root) {
         if (root == NULL) {
                 return;
         }
@@ -116,11 +139,15 @@ void stat (Data* d, fstream& input_file, fstream& output_file, string prefix) {
                         a = 0;
                 }
         }
-        d->stat.print();
         output_file << prefix << endl;
         output_file << text.length() << endl;
         output_file << count << endl;
+        d->stat.sort();
+        d->stat.print();
         d->stat.stat_to_file(output_file);
+}
+void make_tree(Data* d, TreeNode* root) {
+        levelOrderPrint (root, list);
 }
 
 int main (int argc, char const *argv[]) {
@@ -130,7 +157,7 @@ int main (int argc, char const *argv[]) {
                         fstream fout;
                         fout.open(string(argv[2]));
                         fstream fin;
-                        fin.open(string(argv[3]), ios::app | ios::trunc);
+                        fin.open(string(argv[3]), ios::app);
                         stat(&d, fout, fin, string(argv[4]));
                 }
                 if (string(argv[1]) == "decompress") {
