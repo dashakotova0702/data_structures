@@ -10,13 +10,16 @@ char data;
 int weight;
 TreeNode *left;
 TreeNode *right;
+TreeNode() : left(NULL), right(NULL) {
+}
 };
 
 struct Node {
         char symbol;
         int stat;
+        TreeNode* node;
         Node* next;
-        Node (char _symbol, int _stat) : symbol(_symbol), stat(_stat), next(NULL) {
+        Node (char _symbol, int _stat) : symbol(_symbol), stat(_stat), node(NULL), next(NULL) {
         }
 };
 
@@ -43,9 +46,16 @@ struct List {
                 if (is_empty()) return;
                 Node* node = first;
                 while (node) {
-                        cout << node->symbol << " " << node->stat;
-                        node = node->next;
-                        cout << endl;
+                        if (node->node == NULL) {
+                                cout << node->symbol << " " << node->stat;
+                                node = node->next;
+                                cout << endl;
+                        }
+                        else {
+                                cout << "tree " << node->stat;
+                                node = node->next;
+                                cout << endl;
+                        }
                 }
         }
         void stat_to_file(fstream& file) {
@@ -78,41 +88,42 @@ struct List {
                 if (h != NULL)
                         first = h;
         }
+        void remove_first() {
+                if (is_empty()) return;
+                Node* p = first;
+                first = p->next;
+                delete p;
+        }
 };
 
 class Data {
 public:
 TreeNode* tree;
 List stat;
+
+void addNode (char data, int weight, TreeNode* node, TreeNode* node_next) {
+        node->data = data;
+        node->weight = weight;
+        if (node_next != 0) {
+                node->left = node_next->left;
+                node->right = node_next->right;
+        }
+}
+void connectNode (TreeNode* node1, TreeNode* node2, TreeNode* root) {
+        root->data = 0;
+        root->weight = node1->weight + node2->weight;
+        root->left = node1;
+        root->right = node2;
+}
+void print (TreeNode* root) {
+        if (root != NULL) {
+                cout << root->data << "&" << root->weight << endl;
+                print(root->left);
+                print(root->right);
+        }
+}
 };
 
-void levelOrderPrint (TreeNode* root, List* list) {
-        if (root == NULL) {
-                return;
-        }
-        queue <TreeNode*> q;
-        q.push(root);
-
-        while (!q.empty() ) {
-                TreeNode* temp = q.front();
-                q.pop();
-                cout << temp->data << " ";
-
-                if ( temp->left != NULL )
-                        q.push(temp->left);
-
-                if ( temp->right != NULL )
-                        q.push(temp->right);
-        }
-}
-void preorderPrint (TreeNode* root) {
-        if (root == NULL) {
-                return;
-        }
-        cout << root->data << " ";
-        preorderPrint(root->left);
-        preorderPrint(root->right);
-}
 void stat (Data* d, fstream& input_file, fstream& output_file, string prefix) {
         string text;
         getline(input_file, text);
@@ -143,13 +154,48 @@ void stat (Data* d, fstream& input_file, fstream& output_file, string prefix) {
         output_file << text.length() << endl;
         output_file << count << endl;
         d->stat.sort();
+        d->stat.sort();
         d->stat.print();
+        cout << endl;
         d->stat.stat_to_file(output_file);
 }
-void make_tree(Data* d, TreeNode* root) {
-        levelOrderPrint (root, list);
+void makeTree (Data* d) {
+        Node* node = d->stat.first;
+        int count = -1;
+        while (node) {
+                count++;
+                node = node->next;
+        }
+        node = d->stat.first;
+        TreeNode links[count];
+        TreeNode tree1;
+        TreeNode tree2;
+        TreeNode root;
+        for (int i = 0; i < count; i++) {
+                if (node->node != NULL)
+                        d->addNode(node->symbol, node->stat,  &tree1, node->node);
+                else
+                        d->addNode(node->symbol, node->stat, &tree1, 0);
+                node = node->next;
+                if (node->node != NULL)
+                        d->addNode(node->symbol, node->stat, &tree2, node->node);
+                else
+                        d->addNode(node->symbol, node->stat, &tree2, 0);
+                d->connectNode(&tree1, &tree2, &root);
+                d->addNode(root.data, root.weight, &links[i], &root);
+                node->symbol = 0;
+                node->stat = links[i].weight;
+                node->node = &links[i];
+                d->print(&links[0]);
+                d->print(&links[1]);
+                d->stat.remove_first();
+                d->stat.sort();
+                d->stat.sort();
+                d->stat.print();
+                cout << endl;
+                node = d->stat.first;
+        }
 }
-
 int main (int argc, char const *argv[]) {
         if (argc == 5) {
                 Data d;
@@ -159,6 +205,7 @@ int main (int argc, char const *argv[]) {
                         fstream fin;
                         fin.open(string(argv[3]), ios::app);
                         stat(&d, fout, fin, string(argv[4]));
+                        makeTree(&d);
                 }
                 if (string(argv[1]) == "decompress") {
 
